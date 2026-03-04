@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from '../api'; 
 
 const Register = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
+        username: "", // เพิ่มช่องสำหรับ Username
         firstName: "",
         lastName: "",
         birthDate: "",
@@ -19,54 +21,69 @@ const Register = () => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const existingUser = JSON.parse(localStorage.getItem("registeredUser"));
+        try {
+            // ส่งข้อมูลไปยัง Backend 
+            const response = await api.post('/auth/register', {
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+                firstname: formData.firstname,
+                lastname: formData.lastname,
+                birthDate: formData.birthDate
+            });
 
-        if (existingUser && existingUser.email === formData.email) {
-            alert("อีเมลนี้ถูกใช้งานแล้ว ❌");
-            return;
+            alert("สมัครสมาชิกสำเร็จ");
+            navigate("/login");
+        } catch (error) {
+            console.error(error);
+            // กรณี Username หรือ Email ซ้ำ หลังบ้านจะแจ้งกลับมาที่นี่
+            alert(error.response?.data?.message || "สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่ ❌");
         }
-
-        localStorage.setItem("registeredUser", JSON.stringify(formData));
-
-        alert("สมัครสมาชิกสำเร็จ ✅");
-        navigate("/login");
     };
 
     return (
         <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
             <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-
-                <h1 className="text-2xl font-bold text-blue-600 text-center mb-6">
-                    สมัครสมาชิก
-                </h1>
+                <h1 className="text-2xl font-bold text-blue-600 text-center mb-6">สมัครสมาชิก</h1>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    
+                    {/* --- ช่อง Username (เพิ่มใหม่) --- */}
+                    <input
+                        type="text"
+                        name="username"
+                        placeholder="ชื่อผู้ใช้งาน (Username)"
+                        value={formData.username}
+                        onChange={handleChange}
+                        required
+                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
+                    />
 
                     <div className="grid grid-cols-2 gap-3">
                         <input
                             type="text"
-                            name="firstName"
+                            name="firstname"
                             placeholder="ชื่อ"
-                            value={formData.firstName}
+                            value={formData.firstname}
                             onChange={handleChange}
                             required
                             className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
                         />
-
                         <input
                             type="text"
-                            name="lastName"
+                            name="lastname"
                             placeholder="นามสกุล"
-                            value={formData.lastName}
+                            value={formData.lastname}
                             onChange={handleChange}
                             required
                             className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400"
                         />
                     </div>
 
+                    <div className="text-sm text-gray-500 ml-1">วันเกิด</div>
                     <input
                         type="date"
                         name="birthDate"
@@ -102,9 +119,11 @@ const Register = () => {
                     >
                         สมัครสมาชิก
                     </button>
-
                 </form>
-
+                
+                <p className="text-center text-gray-500 text-sm mt-4">
+                    มีบัญชีอยู่แล้ว? <span className="text-blue-600 cursor-pointer" onClick={() => navigate('/login')}>เข้าสู่ระบบ</span>
+                </p>
             </div>
         </div>
     );

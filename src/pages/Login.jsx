@@ -1,53 +1,49 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from '../api';
 
 const Login = () => {
   const navigate = useNavigate();
 
-  // โหลดข้อมูลจาก localStorage ครั้งเดียวตอนเริ่ม
-  const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  // สร้าง State สำหรับเก็บค่าที่พิมพ์
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [email, setEmail] = useState(() => savedUser.email || "");
-  const [password, setPassword] = useState(() => savedUser.password || "");
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const registeredUser = JSON.parse(localStorage.getItem("registeredUser"));
+    try {
+      // ยิง API
+      const response = await api.post('/auth/login', { 
+        username: email, 
+        password: password 
+      });
+      
+      // เมื่อ Login สำเร็จ: เก็บ Token และข้อมูล User จริงจาก DB ลงเครื่อง
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
 
-    if (
-      !registeredUser ||
-      registeredUser.email !== email ||
-      registeredUser.password !== password
-    ) {
-      alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง ❌");
-      return;
+      alert("เข้าสู่ระบบสำเร็จ!");
+      navigate('/'); // กลับไปหน้าหลัก
+    } catch (error) {
+      console.error(error);
+      // ถ้าเปรียบเทียบรหัสผ่านใน Backend แล้วไม่ตรง จะเด้งมาที่นี่
+      alert(error.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง ❌");
     }
-
-    // เก็บสถานะ login
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("currentUser", JSON.stringify(registeredUser));
-
-    alert("เข้าสู่ระบบสำเร็จ ✅");
-    navigate("/");
   };
 
   return (
     <div className="min-h-screen bg-blue-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-
         <h1 className="text-2xl font-bold text-blue-600 text-center mb-6">
           เข้าสู่ระบบ
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
-              อีเมล
-            </label>
+            <label className="block text-sm text-gray-600 mb-1">อีเมล</label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -56,9 +52,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
-              รหัสผ่าน
-            </label>
+            <label className="block text-sm text-gray-600 mb-1">รหัสผ่าน</label>
             <input
               type="password"
               value={password}
@@ -74,9 +68,11 @@ const Login = () => {
           >
             เข้าสู่ระบบ
           </button>
-
         </form>
-
+        
+        <p className="text-center text-gray-500 text-sm mt-4">
+            ยังไม่มีบัญชี? <span className="text-blue-600 cursor-pointer" onClick={() => navigate('/register')}>สมัครสมาชิก</span>
+        </p>
       </div>
     </div>
   );
