@@ -1,22 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import api from '../api'; // มั่นใจว่าไฟล์ api.js อยู่ถูกที่นะ!
+import api from '../api';
 
 const Payment = () => {
   const navigate = useNavigate();
-  // ดึงข้อมูลหวยจากตะกร้าที่เพื่อนเก็บไว้
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
   const [name, setName] = useState("");
 
-  // ฟังก์ชันชำระเงินเวอร์ชันเชื่อมต่อ Database
   const handlePayment = async () => {
-    // 1. เช็คว่ากรอกชื่อหรือยัง
-    if (!name) {
-      alert("กรุณากรอกชื่อผู้ชำระเงิน");
-      return;
-    }
+    if (!name) return alert("กรุณากรอกชื่อผู้ชำระเงิน");
 
-    // 2. ดึงข้อมูล User จากการ Login
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
       alert("กรุณาเข้าสู่ระบบก่อนชำระเงิน");
@@ -24,57 +17,55 @@ const Payment = () => {
     }
 
     try {
-      // 3. วนลูปส่งข้อมูลหวยในตะกร้าไปที่ Backend (กรณีมีหลายใบ)
-      // หรือถ้าจะส่งใบเดียวตามในรูป ให้เลือกใบแรกจาก cart
-      if (cart.length > 0) {
-        const lotteryItem = cart[0]; // สมมติว่าจ่ายทีละใบตามรูปตะกร้า
-
-        await api.post('/orders/checkout', {
+      // 🔄 วนลูปจ่ายเงินทุกใบในตะกร้า
+      for (const item of cart) {
+        await api.post('/lottery/checkout', {
           userId: user.id,
-          lotteryId: lotteryItem.id // ต้องมั่นใจว่าในตะกร้าเพื่อนเก็บ id ไว้ด้วย
+          lotteryId: item.lottery_id // ✅ ใช้ lottery_id ให้ตรงกับ DB
         });
-
-        alert("ชำระเงินสำเร็จ 🎉 ข้อมูลบันทึกลงระบบแล้ว");
-        
-        // 4. ล้างตะกร้าในเครื่องหลังจ่ายเงินเสร็จ
-        localStorage.removeItem("cart");
-        navigate("/my-lotteries"); // ไปหน้าดูหวยของตัวเอง
       }
+
+      alert("ชำระเงินสำเร็จ 🎉 ข้อมูลบันทึกลงระบบแล้ว");
+      localStorage.removeItem("cart");
+      navigate("/orders"); 
     } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อกับ Server");
+      alert(error.response?.data?.message || "เกิดข้อผิดพลาดในการชำระเงิน");
     }
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gray-100">
-      <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
-        <h1 className="text-2xl font-bold mb-4">ชำระเงิน</h1>
+    <div className="min-h-screen p-6 bg-gray-100 font-kanit">
+      <div className="max-w-xl mx-auto bg-white p-8 rounded-[2rem] shadow-xl">
+        <h1 className="text-3xl font-black text-blue-900 mb-6">ชำระเงิน</h1>
 
         {cart.length === 0 ? (
-          <p>ไม่มีสินค้าในตะกร้า</p>
+          <p className="text-gray-400">ไม่มีสินค้าในตะกร้า</p>
         ) : (
           <>
-            <div className="mb-4">
+            <div className="mb-6 space-y-3">
               {cart.map((item, index) => (
-                <div key={index} className="flex justify-between border-b py-2">
-                   <p className="text-lg">เลข {item.number}</p>
-                   <p className="text-gray-500">฿80.00</p>
+                <div key={index} className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                  <p className="text-xl font-bold text-gray-700">เลข {item.lottery_number}</p>
+                  <p className="text-blue-600 font-black">฿80.00</p>
                 </div>
               ))}
+              <div className="pt-4 border-t flex justify-between items-end">
+                <p className="font-bold text-gray-400">ยอดรวมทั้งหมด</p>
+                <p className="text-3xl font-black text-blue-600">{(cart.length * 80).toLocaleString()} บาท</p>
+              </div>
             </div>
 
             <input
               type="text"
-              placeholder="ชื่อผู้ชำระเงิน (เพื่อบันทึกข้อมูล)"
+              placeholder="ชื่อผู้ชำระเงิน"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border p-2 rounded mb-4"
+              className="w-full border-2 border-gray-100 p-4 rounded-2xl mb-6 focus:border-blue-500 outline-none transition-all"
             />
 
             <button
-              onClick={handlePayment} // เรียกใช้ฟังก์ชันที่เราแก้ใหม่
-              className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 font-bold"
+              onClick={handlePayment}
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 font-bold text-xl shadow-lg shadow-blue-100 transition-all active:scale-95"
             >
               ยืนยันชำระเงิน
             </button>

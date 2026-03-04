@@ -11,23 +11,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
-      // ยิง API
       const response = await api.post('/auth/login', { 
         username: email, 
         password: password 
       });
       
-      // เมื่อ Login สำเร็จ: เก็บ Token และข้อมูล User จริงจาก DB ลงเครื่อง
+      // ✅ 1. เก็บ Token ปกติ
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
+  
+      // ✅ 2. แก้จาก 'user' เป็น 'currentUser' ให้ตรงกับ Navbar
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+  
+      // ✅ 3. เพิ่มสถานะ isLoggedIn เพื่อให้ Navbar รู้ว่าล็อคอินแล้ว
+      localStorage.setItem('isLoggedIn', 'true');
+  
       alert("เข้าสู่ระบบสำเร็จ!");
-      navigate('/'); // กลับไปหน้าหลัก
+      navigate('/'); 
     } catch (error) {
       console.error(error);
-      // ถ้าเปรียบเทียบรหัสผ่านใน Backend แล้วไม่ตรง จะเด้งมาที่นี่
       alert(error.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง ❌");
     }
   };
