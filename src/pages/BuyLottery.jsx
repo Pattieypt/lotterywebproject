@@ -12,8 +12,10 @@ const BuyLottery = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartItems, setCartItems] = useState([]); 
+  const [cartItems, setCartItems] = useState([]);
   const [showToast, setShowToast] = useState(false);
+  const [activeSession, setActiveSession] = useState(null);
+  const [latestResults, setLatestResults] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -21,6 +23,7 @@ const BuyLottery = () => {
   useEffect(() => {
     fetchData();
     updateCartData();
+    fetchLatestResults();
 
     // ⏱️ ระบบเช็คเวลาหมดอายุทุก 1 วินาที เพื่อดึงสลากคืนแผง
     const expirationTimer = setInterval(() => {
@@ -33,12 +36,39 @@ const BuyLottery = () => {
   const fetchData = async () => {
     try {
       const response = await api.get('/lottery/available');
-      setAllLotteries(response.data);
-      setFilteredLotteries(response.data);
-      setLoading(false);
+      const allData = response.data.data || [];
+      const currentSession = response.data.activeSession;
+  
+      
+      const currentSessionLotteries = allData.filter(item => 
+        Number(item.session_id) === Number(currentSession)
+      );
+  
+      setActiveSession(currentSession);
+  
+      //ถ้ากรองแล้วไม่เจออะไรเลย ให้ใช้ข้อมูลทั้งหมดโชว์ไปก่อนเพื่อไม่ให้หน้าค้าง
+      const finalData = currentSessionLotteries.length > 0 ? currentSessionLotteries : allData;
+      
+      setAllLotteries(finalData);
+      setFilteredLotteries(finalData);
+      
+      setLoading(false); // ต้องอยู่นอกเงื่อนไขเพื่อให้หายค้างแน่นอน
     } catch (error) {
-      console.error("Error fetching lotteries:", error);
+      console.error("Error:", error);
       setLoading(false);
+    }
+  };
+
+  const fetchLatestResults = async () => {
+    try {
+      const response = await api.get('/lottery/results-latest');
+      console.log("ข้อมูลจาก API:", response.data);
+      if (response.data) {
+        setLatestResults(response.data);
+        setTargetDate(response.data.end_time);
+      }
+    } catch (error) {
+      console.error("Error fetching results:", error);
     }
   };
 
@@ -54,23 +84,23 @@ const BuyLottery = () => {
       return response.status === 200;
     } catch (error) { return false; }
   };
-  
+
   const checkCartExpiration = async () => {
     const stored = JSON.parse(localStorage.getItem("cart") || "[]");
     if (stored.length === 0) return;
-  
+
     const now = Date.now();
     const expiredTickets = stored.filter(item => item.expiresAt <= now);
     const stillValid = stored.filter(item => item.expiresAt > now);
-  
+
     if (expiredTickets.length > 0) {
       const nums = expiredTickets.map(t => t.lottery_number).join(", ");
-      alert(`⏰ หมดเวลาจองเลข: ${nums}\nสลากคืนแผงแล้วจ้า`);
-  
+      alert(`⏰ หมดเวลาจองเลข: ${nums}\nสลากคืนแผงแล้ว`);
+
       for (const ticket of expiredTickets) {
         await releaseTicketAPI(ticket.lottery_id); // คืนแผงใน DB
       }
-  
+
       localStorage.setItem("cart", JSON.stringify(stillValid));
       setCartItems(stillValid);
       setCartCount(stillValid.length);
@@ -81,7 +111,7 @@ const BuyLottery = () => {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    const filtered = allLotteries.filter(lottery => 
+    const filtered = allLotteries.filter(lottery =>
       lottery.lottery_number.includes(value)
     );
     setFilteredLotteries(filtered);
@@ -91,25 +121,25 @@ const BuyLottery = () => {
   const handleAddToCart = async (lottery) => {
     try {
       const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      // 🔗 ยิง API ไปจองที่หลังบ้าน (เปลี่ยน status เป็น reserved)
+      //ยิง API ไปจองที่หลังบ้าน (เปลี่ยน status เป็น reserved)
       const response = await api.post('/lottery/reserve', {
         lottery_id: lottery.lottery_id,
-        user_id: userData.id 
+        user_id: userData.id
       });
 
       if (response.status === 200) {
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        
-        // 🕒 รับเวลาหมดอายุที่คำนวณจาก Server มาเก็บไว้
+
+        //  รับเวลาหมดอายุที่คำนวณจาก Server มาเก็บไว้
         const ticketWithTimer = {
           ...lottery,
-          expiresAt: new Date(response.data.expiresAt).getTime() 
+          expiresAt: new Date(response.data.expiresAt).getTime()
         };
 
         const updatedCart = [...cart, ticketWithTimer];
         localStorage.setItem("cart", JSON.stringify(updatedCart));
-        updateCartData(); 
-        
+        updateCartData();
+
         setShowToast(true);
         setTimeout(() => setShowToast(false), 2000);
       }
@@ -123,13 +153,14 @@ const BuyLottery = () => {
     if (isSuccess) {
       const updated = cartItems.filter(item => item.lottery_id !== id);
       localStorage.setItem("cart", JSON.stringify(updated));
-      updateCartData(); 
+      updateCartData();
       fetchData(); // รีเฟรชให้เลขเด้งกลับมา
     } else {
       alert("เกิดข้อผิดพลาดในการคืนสลากสู่แผง");
     }
   };
 
+  const res = latestResults || {};
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredLotteries.slice(indexOfFirstItem, indexOfLastItem);
@@ -137,7 +168,7 @@ const BuyLottery = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 pb-32 font-kanit">
-      
+
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[100] animate-bounce pointer-events-none">
           <div className="bg-green-600 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-2 border-2 border-green-400">
@@ -151,10 +182,13 @@ const BuyLottery = () => {
           <h1 className="text-4xl font-black text-blue-900 mb-3">สลากกินไม่แบ่งรัฐบาล</h1>
           {allLotteries.length > 0 && (
             <div className="inline-block bg-blue-600 text-white px-8 py-2 rounded-full shadow-lg font-bold text-lg">
-              ประจำงวด: {allLotteries[0].name}
+              ประจำงวด: { res.name || "กำลังโหลดข้อมูล..."}
+
             </div>
           )}
+
         </div>
+
 
         <div className="max-w-md mx-auto mb-12 relative group">
           <div className="absolute inset-y-0 left-0 pl-5 flex items-center text-blue-400">
@@ -192,11 +226,10 @@ const BuyLottery = () => {
                   <button
                     onClick={() => !isAdded && handleAddToCart(lottery)}
                     disabled={isAdded}
-                    className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95 ${
-                      isAdded 
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none" 
+                    className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95 ${isAdded
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                         : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-100"
-                    }`}
+                      }`}
                   >
                     {isAdded ? "✅ เพิ่มในตะกร้าแล้ว" : (
                       <>
@@ -231,10 +264,10 @@ const BuyLottery = () => {
         )}
       </button>
 
-      <CartDrawer 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-        cart={cartItems} 
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cartItems}
         onRemove={handleRemoveFromCart}
         navigate={navigate}
       />

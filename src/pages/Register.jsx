@@ -6,7 +6,7 @@ const Register = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        username: "", // เพิ่มช่องสำหรับ Username
+        username: "", 
         firstName: "",
         lastName: "",
         birthDate: "",
@@ -25,7 +25,7 @@ const Register = () => {
         e.preventDefault();
 
         try {
-            // ส่งข้อมูลไปยัง Backend 
+            
             const response = await api.post('/auth/register', {
                 username: formData.username,
                 email: formData.email,
@@ -51,7 +51,7 @@ const Register = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     
-                    {/* --- ช่อง Username (เพิ่มใหม่) --- */}
+                    {/*ช่อง Username*/}
                     <input
                         type="text"
                         name="username"

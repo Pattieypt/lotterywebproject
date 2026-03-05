@@ -17,7 +17,7 @@ const Payment = () => {
     }
 
     try {
-      // 🔄 วนลูปจ่ายเงินทุกใบในตะกร้า
+      // วนลูปจ่ายเงินทุกใบในตะกร้า
       for (const item of cart) {
         await api.post('/lottery/checkout', {
           userId: user.id,
@@ -39,7 +39,7 @@ const Payment = () => {
         <h1 className="text-3xl font-black text-blue-900 mb-6">ชำระเงิน</h1>
 
         {cart.length === 0 ? (
-          <p className="text-gray-400">ไม่มีสินค้าในตะกร้า</p>
+          <p className="text-gray-400">ไม่มีสลากในตะกร้า</p>
         ) : (
           <>
             <div className="mb-6 space-y-3">

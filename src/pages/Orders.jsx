@@ -17,7 +17,7 @@ const OrderHistory = () => {
 
       const response = await api.get(`/orders/my-lottery/${user.id}`);
       
-      // 🏗️ Logic จัดกลุ่มข้อมูลตาม round_name
+      // Logic จัดกลุ่มข้อมูลตาม round_name
       const grouped = response.data.reduce((acc, order) => {
         const key = order.round_name || "ไม่ระบุงวด";
         if (!acc[key]) acc[key] = [];

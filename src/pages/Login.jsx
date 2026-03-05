@@ -18,13 +18,13 @@ const Login = () => {
         password: password 
       });
       
-      // ✅ 1. เก็บ Token ปกติ
+      // 1. เก็บ Token ปกติ
       localStorage.setItem('token', response.data.token);
   
-      // ✅ 2. แก้จาก 'user' เป็น 'currentUser' ให้ตรงกับ Navbar
+      // 2. แก้จาก 'user' เป็น 'currentUser' ให้ตรงกับ Navbar
       localStorage.setItem('currentUser', JSON.stringify(response.data.user));
   
-      // ✅ 3. เพิ่มสถานะ isLoggedIn เพื่อให้ Navbar รู้ว่าล็อคอินแล้ว
+      // 3. เพิ่มสถานะ isLoggedIn เพื่อให้ Navbar รู้ว่าล็อคอินแล้ว
       localStorage.setItem('isLoggedIn', 'true');
   
       alert("เข้าสู่ระบบสำเร็จ!");

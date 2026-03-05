@@ -9,7 +9,7 @@ const Cart = () => {
 
   useEffect(() => {
     loadCart();
-    // ⏱️ เช็คหมดเวลาทุกวินาทีเหมือนหน้า BuyLottery
+    // เช็คหมดเวลาทุกวินาทีเหมือนหน้า
     const timer = setInterval(checkCartExpiration, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -19,7 +19,7 @@ const Cart = () => {
     setCartItems(stored);
   };
 
-  // ✅ ฟังก์ชันสั่งหลังบ้านให้ปล่อยเลข (สำคัญมาก!)
+  //ฟังก์ชันสั่งหลังบ้านให้ปล่อยเลข
   const releaseTicketAPI = async (id) => {
     try {
       await api.post('/lottery/release', { lottery_id: id });
@@ -28,7 +28,7 @@ const Cart = () => {
     }
   };
 
-  // ✅ ระบบแจ้งเตือนและคืนสลากเมื่อหมดเวลา
+  // ระบบแจ้งเตือนและคืนสลากเมื่อหมดเวลา
   const checkCartExpiration = async () => {
     const stored = JSON.parse(localStorage.getItem("cart") || "[]");
     if (stored.length === 0) return;
@@ -40,7 +40,7 @@ const Cart = () => {
     if (expiredTickets.length > 0) {
       const ticketNumbers = expiredTickets.map(t => t.lottery_number).join(", ");
       
-      // เด้งแจ้งเตือนตามที่แพรวต้องการ
+      // เด้งแจ้งเตือน
       alert(`⏰ หมดเวลาจองสลากเลข: ${ticketNumbers}\nสลากถูกดึงกลับคืนแผงแล้วจ้า`);
 
       // ยิง API คืนแผงใน DB
@@ -53,12 +53,12 @@ const Cart = () => {
     }
   };
 
-  // ✅ ฟังก์ชันลบสลากออกเอง
+  // ฟังก์ชันลบสลากออกเอง
   const handleRemove = async (id) => {
-    // 1. บอกหลังบ้านให้แก้สถานะเป็น available
+    // บอกหลังบ้านให้แก้สถานะเป็น available
     await releaseTicketAPI(id);
     
-    // 2. ลบออกจากหน้าจอ
+    // ลบออกจากหน้าจอ
     const updated = cartItems.filter(item => item.lottery_id !== id);
     localStorage.setItem("cart", JSON.stringify(updated));
     setCartItems(updated);
@@ -86,7 +86,7 @@ const Cart = () => {
               onClick={() => navigate("/buy")}
               className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-blue-100"
             >
-              ไปเลือกเลขสวย ๆ กัน!
+              ซื้อสลากเพิ่ม
             </button>
           </div>
         ) : (

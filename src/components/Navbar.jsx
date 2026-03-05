@@ -4,13 +4,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom"; // เพิ�
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ ใช้ติดตามการเปลี่ยนหน้า
+  const location = useLocation(); 
 
-  // ✅ เปลี่ยนมาใช้ State คุมสถานะแทนการดึงสด
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // 🔄 ตรวจสอบสถานะทุกครั้งที่มีการเปลี่ยนหน้า (Location Change)
+  //ตรวจสอบสถานะทุกครั้งที่มีการเปลี่ยนหน้า
   useEffect(() => {
     const status = localStorage.getItem("isLoggedIn") === "true";
     const user = JSON.parse(localStorage.getItem("currentUser"));
@@ -22,7 +22,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("currentUser");
-    localStorage.removeItem("token"); // ล้าง Token ออกไปด้วย
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
     setCurrentUser(null);
     navigate("/login");
@@ -36,11 +36,11 @@ const Navbar = () => {
 
           <div className="hidden md:flex gap-6 items-center">
             <Link to="/" className="hover:text-blue-200 transition">หน้าแรก</Link>
-            <Link to="/buy" className="hover:text-blue-200 transition">ซื้อหวย</Link>
+            <Link to="/buy" className="hover:text-blue-200 transition">ซื้อสลาก</Link>
             <Link to="/result" className="hover:text-blue-200 transition">ผลรางวัล</Link>
             <Link to="/orders" className="hover:text-blue-200 transition">ประวัติคำสั่งซื้อ</Link>
 
-            {/* ✅ แสดงเมนูตามสถานะ isLoggedIn ใน State */}
+            {/*แสดงเมนูตามสถานะ isLoggedIn ใน State */}
             {!isLoggedIn ? (
               <div className="flex gap-4 border-l border-blue-400 pl-6 ml-2">
                 <Link to="/login" className="hover:text-yellow-300 font-bold">เข้าสู่ระบบ</Link>

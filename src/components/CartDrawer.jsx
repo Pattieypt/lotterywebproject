@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { FaTrash, FaTimes, FaArrowRight, FaClock } from "react-icons/fa";
 
-// ⏱️ Component นับถอยหลังที่ปลอดภัยกว่าเดิม
 const TicketTimer = ({ expiresAt }) => {
   const [timeLeft, setTimeLeft] = useState("คำนวณเวลา...");
 
@@ -64,7 +63,7 @@ const CartDrawer = ({ isOpen, onClose, cart = [], onRemove, navigate }) => {
                   <div>
                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">เลขสลาก</p>
                     <p className="text-2xl font-black tracking-[0.2em] text-gray-800">{item.lottery_number}</p>
-                    {/* 🕒 เรียกใช้ตัวนับถอยหลัง */}
+                    {/* เรียกใช้ตัวนับถอยหลัง */}
                     <TicketTimer expiresAt={item.expiresAt} />
                   </div>
                   <button onClick={() => onRemove(item.lottery_id)} className="p-3 text-gray-300 hover:text-red-500 transition-all"><FaTrash size={18} /></button>
